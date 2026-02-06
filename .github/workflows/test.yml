@@ -149,22 +149,13 @@ jobs:
         run: |
           echo "清空18PlusList.txt"
           echo "">$GITHUB_WORKSPACE/app/src/main/assets/18PlusList.txt
-      - name: Configure signing when secrets are available
-        if: ${{ secrets.SIGNING_KEY != '' }}
+      - name: Release Apk Sign
         run: |
           echo "${{ secrets.SIGNING_KEY }}" | base64 -d > $GITHUB_WORKSPACE/app/my-release-key.jks
           echo "RELEASE_STORE_FILE=my-release-key.jks" >> $GITHUB_WORKSPACE/gradle.properties
           echo "RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_WORKSPACE/gradle.properties
           echo "RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_WORKSPACE/gradle.properties
           echo "RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_WORKSPACE/gradle.properties
-
-      - name: Select build variant
-        run: |
-          if [ -n "${{ secrets.SIGNING_KEY }}" ]; then
-            echo "BUILD_VARIANT=Release" >> $GITHUB_ENV
-          else
-            echo "BUILD_VARIANT=Debug" >> $GITHUB_ENV
-          fi
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -176,13 +167,12 @@ jobs:
           echo "VersionName: $APP_VERSION_NAME"
           echo "VersionCode (Commit Number): $COMMIT_NUMBER"
           chmod +x gradlew
-          ./gradlew assemble${{ env.product }}${{ env.BUILD_VARIANT }}
+          ./gradlew assemble${{ env.product }}Release
         env:
           COMMIT_NUMBER: ${{ env.COMMIT_NUMBER_VAL }}
           APP_VERSION_NAME: ${{ env.VERSIONL }}
 
       - name: Move Missing Rules Files
-        if: ${{ env.BUILD_VARIANT == 'Release' }}
         run: |
           echo "移动missing_rules.txt文件"
           MAPPING_DIR="${{ github.workspace }}/mapping"
@@ -191,7 +181,6 @@ jobs:
           find ${{ github.workspace }}/app/build/outputs/mapping/ -name "missing_rules.txt" -exec mv {} "$MAPPING_DIR/missing_rules.txt" \;
 
       - name: Upload Missing Rules File To Artifact
-        if: ${{ env.BUILD_VARIANT == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: legado.${{ env.product }}.${{ env.type }}.mapping.missing_rules
@@ -212,22 +201,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: universal-apk
-          path: app/build/outputs/apk/app/${{ env.BUILD_VARIANT == 'Release' && 'release' || 'debug' }}/legado_app_*[0-9].apk
+          path: app/build/outputs/apk/app/release/legado_app_*[0-9].apk
 
       - name: Upload arm64-v8a APK
         uses: actions/upload-artifact@v4
         with:
           name: arm64-v8a-apk
-          path: app/build/outputs/apk/app/${{ env.BUILD_VARIANT == 'Release' && 'release' || 'debug' }}/*arm64-v8a.apk
+          path: app/build/outputs/apk/app/release/*arm64-v8a.apk
 
       - name: Upload armeabi-v7a APK
         uses: actions/upload-artifact@v4
         with:
           name: armeabi-v7a-apk
-          path: app/build/outputs/apk/app/${{ env.BUILD_VARIANT == 'Release' && 'release' || 'debug' }}/*armeabi-v7a.apk
+          path: app/build/outputs/apk/app/release/*armeabi-v7a.apk
 
       - name: Upload Mapping File To Artifact
-        if: ${{ env.BUILD_VARIANT == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: legado.${{ env.product }}.${{ env.type }}.mapping
