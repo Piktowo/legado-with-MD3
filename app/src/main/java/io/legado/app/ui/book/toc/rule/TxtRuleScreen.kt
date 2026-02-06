@@ -156,7 +156,7 @@ fun TxtRuleScreen(
             onDismissRequest = { showFilePickerSheet = false },
             onSelectSysDir = {
                 showFilePickerSheet = false
-                exportDoc.launch("exportDictRule.json")
+                exportDoc.launch("exportTxtTocRule.json")
             },
             onUpload = {
                 showFilePickerSheet = false
@@ -168,7 +168,7 @@ fun TxtRuleScreen(
 
     (importState as? BaseImportUiState.Success<TxtTocRule>)?.let { state ->
         BatchImportDialog(
-            title = "导入词典规则",
+            title = "导入目录规则",
             importState = state,
             onDismissRequest = { viewModel.cancelImport() },
             onToggleItem = { viewModel.toggleImportSelection(it) },

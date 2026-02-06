@@ -96,8 +96,8 @@ object ColorUtils {
     }
 
     fun byteArrToInt(colorByteArr: ByteArray): Int {
-        return ((colorByteArr[0].toInt() shl 24) + (colorByteArr[1].toInt() and 0xFF shl 16)
-                + (colorByteArr[2].toInt() and 0xFF shl 8) + (colorByteArr[3].toInt() and 0xFF))
+        return ((colorByteArr[0].toInt() shl 24) + ((colorByteArr[1].toInt() and 0xFF) shl 16)
+                + ((colorByteArr[2].toInt() and 0xFF) shl 8) + (colorByteArr[3].toInt() and 0xFF))
     }
 
     /**
