@@ -63,7 +63,7 @@ public class AndroidZipFile implements ZipConstants {
     /**
      * Opens a Zip file with the given name for reading.
      *
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws ZipException if the file doesn't contain a valid zip
      *                      archive.
      */
@@ -75,7 +75,7 @@ public class AndroidZipFile implements ZipConstants {
     /**
      * Opens a Zip file reading the given File.
      *
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws ZipException if the file doesn't contain a valid zip
      *                      archive.
      */
@@ -96,7 +96,7 @@ public class AndroidZipFile implements ZipConstants {
      * The OPEN_DELETE mode is currently unimplemented in this library
      *
      * @param mode Must be one of OPEN_READ or OPEN_READ | OPEN_DELETE
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws ZipException if the file doesn't contain a valid zip
      *                      archive.
      * @since JDK1.3
@@ -117,7 +117,7 @@ public class AndroidZipFile implements ZipConstants {
      * @param di DataInput stream to read from.
      * @param b  the byte buffer to read in (must be at least 2 bytes long).
      * @return The value read.
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws EOFException if the file ends prematurely
      */
     private final int readLeShort(DataInput di, byte[] b) throws IOException {
@@ -137,7 +137,7 @@ public class AndroidZipFile implements ZipConstants {
      * @param di DataInput stream to read from.
      * @param b  the byte buffer to read in (must be at least 4 bytes long).
      * @return The value read.
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws EOFException if the file ends prematurely
      */
     private final int readLeInt(DataInput di, byte[] b) throws IOException {
@@ -182,9 +182,9 @@ public class AndroidZipFile implements ZipConstants {
     /**
      * Read the central directory of a zip file and fill the entries
      * array.  This is called exactly once when first needed. It is called
-     * while holding the lock on <code>raf</code>.
+     * while holding the lock on the file descriptor.
      *
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws ZipException if the central directory is malformed
      */
     private void readEntries() throws ZipException, IOException {
@@ -272,7 +272,7 @@ public class AndroidZipFile implements ZipConstants {
      * this class.  After this is called, no further method should be
      * called.
      *
-     * @throws IOException if a i/o error occured.
+     * @throws IOException if a i/o error occurred.
      */
     public void close() throws IOException {
         synchronized (pfd) {
@@ -346,7 +346,7 @@ public class AndroidZipFile implements ZipConstants {
      *
      * @param entry to check.
      * @return the start offset of the (compressed) data.
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws ZipException if the local header doesn't match the
      *                      central directory header
      */
@@ -376,7 +376,7 @@ public class AndroidZipFile implements ZipConstants {
      *
      * @param entry the entry to create an InputStream for.
      * @return the input stream.
-     * @throws IOException  if a i/o error occured.
+     * @throws IOException  if a i/o error occurred.
      * @throws ZipException if the Zip archive is malformed.
      */
     public InputStream getInputStream(AndroidZipEntry entry) throws IOException {
