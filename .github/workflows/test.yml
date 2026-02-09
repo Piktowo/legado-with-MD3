@@ -150,6 +150,9 @@ jobs:
       - name: Install Android SDK Platform 36
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | sdkmanager --licenses
       - name: Clear 18PlusList.txt
         run: |
           echo "清空18PlusList.txt"
