@@ -68,10 +68,9 @@ import io.legado.app.utils.toggleSystemBar
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * 主界面
@@ -235,49 +234,55 @@ open class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     /**
      * 版本更新日志
      */
-    private suspend fun upVersion() = suspendCoroutine<Unit?> { block ->
+    private suspend fun upVersion() {
         if (LocalConfig.versionCode == appInfo.versionCode) {
-            block.resume(null)
-            return@suspendCoroutine
+            return
         }
         LocalConfig.versionCode = appInfo.versionCode
         if (LocalConfig.isFirstOpenApp) {
             val help = withContext(IO) {
                 String(assets.open("web/help/md/appHelp.md").readBytes())
             }
-            val dialog = TextDialog(getString(R.string.help), help, TextDialog.Mode.MD)
-            dialog.setOnDismissListener { block.resume(null) }
-            showDialogFragment(dialog)
-            return@suspendCoroutine
+            return suspendCancellableCoroutine { cont ->
+                val dialog = TextDialog(getString(R.string.help), help, TextDialog.Mode.MD)
+                dialog.setOnDismissListener { if (cont.isActive) cont.resume(Unit) }
+                showDialogFragment(dialog)
+            }
         }
-        if (!BuildConfig.DEBUG) {
-            lifecycleScope.launch {
-                try {
-                    val info = AppUpdateGitHub.getReleaseByTag(BuildConfig.VERSION_NAME)
-                    if (info != null) {
-                        val dialog = UpdateDialog(info, UpdateDialog.Mode.VIEW_LOG)
-                        dialog.setOnDismissListener { block.resume(null) }
-                        showDialogFragment(dialog)
-                    } else {
-                        val fallback = withContext(IO) {
-                            String(assets.open("updateLog.md").readBytes())
-                        }
-                        val dialog = TextDialog(getString(R.string.update_log), fallback, TextDialog.Mode.MD)
-                        dialog.setOnDismissListener { block.resume(null) }
-                        showDialogFragment(dialog)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    val fallback = withContext(IO) {
-                        String(assets.open("updateLog.md").readBytes())
-                    }
-                    val dialog = TextDialog(getString(R.string.update_log), fallback, TextDialog.Mode.MD)
-                    dialog.setOnDismissListener { block.resume(null) }
+        if (BuildConfig.DEBUG) {
+            return
+        }
+
+        try {
+            val info = AppUpdateGitHub.getReleaseByTag(BuildConfig.VERSION_NAME)
+            if (info != null) {
+                suspendCancellableCoroutine { cont ->
+                    val dialog = UpdateDialog(info, UpdateDialog.Mode.VIEW_LOG)
+                    dialog.setOnDismissListener { if (cont.isActive) cont.resume(Unit) }
+                    showDialogFragment(dialog)
+                }
+            } else {
+                val fallback = withContext(IO) {
+                    String(assets.open("updateLog.md").readBytes())
+                }
+                suspendCancellableCoroutine { cont ->
+                    val dialog =
+                        TextDialog(getString(R.string.update_log), fallback, TextDialog.Mode.MD)
+                    dialog.setOnDismissListener { if (cont.isActive) cont.resume(Unit) }
                     showDialogFragment(dialog)
                 }
             }
-        } else {
-            block.resume(null)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            val fallback = withContext(IO) {
+                String(assets.open("updateLog.md").readBytes())
+            }
+            suspendCancellableCoroutine { cont ->
+                val dialog =
+                    TextDialog(getString(R.string.update_log), fallback, TextDialog.Mode.MD)
+                dialog.setOnDismissListener { if (cont.isActive) cont.resume(Unit) }
+                showDialogFragment(dialog)
+            }
         }
     }
 

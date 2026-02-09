@@ -24,9 +24,9 @@ import io.legado.app.utils.startActivityForBook
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 abstract class BaseImportBookActivity<VM : ViewModel> :
     VMBaseActivity<ActivityImportBookBinding, VM>() {
@@ -53,35 +53,35 @@ abstract class BaseImportBookActivity<VM : ViewModel> :
     /**
      * 设置书籍保存位置
      */
-    protected suspend fun setBookStorage() = suspendCoroutine { block ->
-        localBookTreeSelectListener = {
-            localBookTreeSelectListener = null
-            block.resume(it)
-        }
-        //测试书籍保存位置是否设置
+    protected suspend fun setBookStorage(): Boolean {
+        // 测试书籍保存位置是否设置
         if (!AppConfig.defaultBookTreeUri.isNullOrBlank()) {
-            localBookTreeSelectListener = null
-            block.resume(true)
-            return@suspendCoroutine
+            return true
         }
-        //测试读写??
+        // 测试读写??
         val storageHelp = withContext(IO) {
             String(assets.open("storageHelp.md").readBytes())
         }
         val hint = getString(R.string.select_book_folder)
-        alert(hint, storageHelp) {
-            okButton {
-                localBookTreeSelect.launch {
-                    title = hint
+        return suspendCancellableCoroutine { cont ->
+            localBookTreeSelectListener = { result ->
+                localBookTreeSelectListener = null
+                if (cont.isActive) cont.resume(result)
+            }
+            alert(hint, storageHelp) {
+                okButton {
+                    localBookTreeSelect.launch {
+                        title = hint
+                    }
                 }
-            }
-            cancelButton {
-                localBookTreeSelectListener = null
-                block.resume(false)
-            }
-            onCancelled {
-                localBookTreeSelectListener = null
-                block.resume(false)
+                cancelButton {
+                    localBookTreeSelectListener = null
+                    if (cont.isActive) cont.resume(false)
+                }
+                onCancelled {
+                    localBookTreeSelectListener = null
+                    if (cont.isActive) cont.resume(false)
+                }
             }
         }
     }
