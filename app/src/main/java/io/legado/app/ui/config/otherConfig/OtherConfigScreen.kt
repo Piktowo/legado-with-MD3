@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.legado.app.R
+import io.legado.app.constant.AppLog
 import io.legado.app.service.WebService
 import io.legado.app.ui.widget.components.GlassMediumFlexibleTopAppBar
 import io.legado.app.ui.widget.components.SplicedColumnGroup
@@ -77,7 +78,15 @@ fun OtherConfigScreen(
         uri?.let {
             val modeFlags =
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            context.contentResolver.takePersistableUriPermission(it, modeFlags)
+            kotlin.runCatching {
+                context.contentResolver.takePersistableUriPermission(it, modeFlags)
+            }.onFailure { error ->
+                AppLog.put(
+                    context.getString(R.string.open_sys_dir_picker_error),
+                    error,
+                    false
+                )
+            }
             viewModel.updateLocalBookDir(it.toString())
         }
     }

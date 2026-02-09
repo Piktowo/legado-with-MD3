@@ -33,7 +33,10 @@ import io.legado.app.utils.openUrl
 import io.legado.app.utils.share
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import splitties.init.appCtx
 import java.io.File
 
@@ -81,8 +84,12 @@ class AboutActivity : BaseComposeActivity() {
     }
 
     private fun showMdFile(title: String, fileName: String) {
-        val mdText = String(this.assets.open(fileName).readBytes())
-        showDialogFragment(TextDialog(title, mdText, TextDialog.Mode.MD))
+        lifecycleScope.launch {
+            val mdText = withContext(IO) {
+                String(assets.open(fileName).readBytes())
+            }
+            showDialogFragment(TextDialog(title, mdText, TextDialog.Mode.MD))
+        }
     }
 
     private fun checkUpdate() {

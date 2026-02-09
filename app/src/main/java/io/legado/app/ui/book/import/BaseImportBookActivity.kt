@@ -23,6 +23,8 @@ import io.legado.app.utils.shouldHideSoftInput
 import io.legado.app.utils.startActivityForBook
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -63,7 +65,9 @@ abstract class BaseImportBookActivity<VM : ViewModel> :
             return@suspendCoroutine
         }
         //测试读写??
-        val storageHelp = String(assets.open("storageHelp.md").readBytes())
+        val storageHelp = withContext(IO) {
+            String(assets.open("storageHelp.md").readBytes())
+        }
         val hint = getString(R.string.select_book_folder)
         alert(hint, storageHelp) {
             okButton {

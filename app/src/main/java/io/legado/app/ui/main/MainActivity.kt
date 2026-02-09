@@ -242,7 +242,9 @@ open class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         }
         LocalConfig.versionCode = appInfo.versionCode
         if (LocalConfig.isFirstOpenApp) {
-            val help = String(assets.open("web/help/md/appHelp.md").readBytes())
+            val help = withContext(IO) {
+                String(assets.open("web/help/md/appHelp.md").readBytes())
+            }
             val dialog = TextDialog(getString(R.string.help), help, TextDialog.Mode.MD)
             dialog.setOnDismissListener { block.resume(null) }
             showDialogFragment(dialog)
@@ -257,14 +259,18 @@ open class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                         dialog.setOnDismissListener { block.resume(null) }
                         showDialogFragment(dialog)
                     } else {
-                        val fallback = String(assets.open("updateLog.md").readBytes())
+                        val fallback = withContext(IO) {
+                            String(assets.open("updateLog.md").readBytes())
+                        }
                         val dialog = TextDialog(getString(R.string.update_log), fallback, TextDialog.Mode.MD)
                         dialog.setOnDismissListener { block.resume(null) }
                         showDialogFragment(dialog)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    val fallback = String(assets.open("updateLog.md").readBytes())
+                    val fallback = withContext(IO) {
+                        String(assets.open("updateLog.md").readBytes())
+                    }
                     val dialog = TextDialog(getString(R.string.update_log), fallback, TextDialog.Mode.MD)
                     dialog.setOnDismissListener { block.resume(null) }
                     showDialogFragment(dialog)

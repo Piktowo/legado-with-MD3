@@ -10,7 +10,9 @@ import io.legado.app.help.http.text
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.fromJsonObject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.withContext
 
 object AppUpdateGitHub : AppUpdate.AppUpdateInterface {
 
@@ -23,62 +25,66 @@ object AppUpdateGitHub : AppUpdate.AppUpdateInterface {
         }
 
     private suspend fun getLatestRelease(): List<AppReleaseInfo> {
-        val url = if (checkVariant == AppVariant.OFFICIAL)
-            "https://api.github.com/repos/HapeLee/legado-with-MD3/releases/latest"
-        else
-            "https://api.github.com/repos/HapeLee/legado-with-MD3/releases"
+        return withContext(Dispatchers.IO) {
+            val url = if (checkVariant == AppVariant.OFFICIAL)
+                "https://api.github.com/repos/HapeLee/legado-with-MD3/releases/latest"
+            else
+                "https://api.github.com/repos/HapeLee/legado-with-MD3/releases"
 
-        val res = okHttpClient.newCallResponse { url(url) }
-        if (!res.isSuccessful) throw NoStackTraceException("获取新版本出错(${res.code})")
+            val res = okHttpClient.newCallResponse { url(url) }
+            if (!res.isSuccessful) throw NoStackTraceException("获取新版本出错(${res.code})")
 
-        val body = res.body.text()
-        if (body.isBlank()) throw NoStackTraceException("获取新版本出错")
+            val body = res.body.text()
+            if (body.isBlank()) throw NoStackTraceException("获取新版本出错")
 
-        return when (checkVariant) {
-            AppVariant.BETA_RELEASE -> {
-                val releases = GSON.fromJsonArray<GithubRelease>(body)
-                    .getOrElse { throw NoStackTraceException("解析失败 ${it.localizedMessage}") }
+            when (checkVariant) {
+                AppVariant.BETA_RELEASE -> {
+                    val releases = GSON.fromJsonArray<GithubRelease>(body)
+                        .getOrElse { throw NoStackTraceException("解析失败 ${it.localizedMessage}") }
 
-                releases.filter { it.isPreRelease }
-                    .flatMap { it.gitReleaseToAppReleaseInfo() }
-                    .sortedByDescending { it.createdAt }
+                    releases.filter { it.isPreRelease }
+                        .flatMap { it.gitReleaseToAppReleaseInfo() }
+                        .sortedByDescending { it.createdAt }
+                }
+
+                AppVariant.OFFICIAL -> {
+                    val release = GSON.fromJsonObject<GithubRelease>(body)
+                        .getOrElse { throw NoStackTraceException("解析失败 ${it.localizedMessage}") }
+
+                    release.gitReleaseToAppReleaseInfo()
+                        .sortedByDescending { it.createdAt }
+                }
+
+                AppVariant.ALL -> {
+                    val releases = GSON.fromJsonArray<GithubRelease>(body)
+                        .getOrElse { throw NoStackTraceException("解析失败 ${it.localizedMessage}") }
+
+                    releases.flatMap { it.gitReleaseToAppReleaseInfo() }
+                        .sortedByDescending { it.createdAt }
+                }
+
+                else -> emptyList()
             }
-
-            AppVariant.OFFICIAL -> {
-                val release = GSON.fromJsonObject<GithubRelease>(body)
-                    .getOrElse { throw NoStackTraceException("解析失败 ${it.localizedMessage}") }
-
-                release.gitReleaseToAppReleaseInfo()
-                    .sortedByDescending { it.createdAt }
-            }
-
-            AppVariant.ALL -> {
-                val releases = GSON.fromJsonArray<GithubRelease>(body)
-                    .getOrElse { throw NoStackTraceException("解析失败 ${it.localizedMessage}") }
-
-                releases.flatMap { it.gitReleaseToAppReleaseInfo() }
-                    .sortedByDescending { it.createdAt }
-            }
-
-            else -> emptyList()
         }
     }
 
     suspend fun getReleaseByTag(tag: String): AppUpdate.UpdateInfo? {
-        val url = "https://api.github.com/repos/HapeLee/legado-with-MD3/releases/tags/$tag"
-        val res = okHttpClient.newCallResponse { url(url) }
-        if (!res.isSuccessful) return null
+        return withContext(Dispatchers.IO) {
+            val url = "https://api.github.com/repos/HapeLee/legado-with-MD3/releases/tags/$tag"
+            val res = okHttpClient.newCallResponse { url(url) }
+            if (!res.isSuccessful) return@withContext null
 
-        val body = res.body.text()
-        val release = GSON.fromJsonObject<GithubRelease>(body).getOrElse { return null }
-        val info = release.gitReleaseToAppReleaseInfo().firstOrNull() ?: return null
+            val body = res.body.text()
+            val release = GSON.fromJsonObject<GithubRelease>(body).getOrElse { return@withContext null }
+            val info = release.gitReleaseToAppReleaseInfo().firstOrNull() ?: return@withContext null
 
-        return AppUpdate.UpdateInfo(
-            tagName = info.versionName,
-            updateLog = info.note,
-            downloadUrl = info.downloadUrl,
-            fileName = info.name
-        )
+            AppUpdate.UpdateInfo(
+                tagName = info.versionName,
+                updateLog = info.note,
+                downloadUrl = info.downloadUrl,
+                fileName = info.name
+            )
+        }
     }
 
     override fun check(scope: CoroutineScope): Coroutine<AppUpdate.UpdateInfo> {

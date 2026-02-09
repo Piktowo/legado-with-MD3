@@ -42,7 +42,15 @@ class HandleFileActivity :
                 if (uri.isContentScheme()) {
                     val modeFlags =
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    contentResolver.takePersistableUriPermission(uri, modeFlags)
+                    kotlin.runCatching {
+                        contentResolver.takePersistableUriPermission(uri, modeFlags)
+                    }.onFailure {
+                        AppLog.put(
+                            getString(R.string.open_sys_dir_picker_error),
+                            it,
+                            false
+                        )
+                    }
                 }
                 onResult(Intent().setData(uri))
             } ?: finish()
@@ -53,7 +61,15 @@ class HandleFileActivity :
             if (it.isContentScheme()) {
                 val modeFlags =
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                contentResolver.takePersistableUriPermission(it, modeFlags)
+                kotlin.runCatching {
+                    contentResolver.takePersistableUriPermission(it, modeFlags)
+                }.onFailure {
+                    AppLog.put(
+                        getString(R.string.open_sys_dir_picker_error),
+                        it,
+                        false
+                    )
+                }
             }
             onResult(Intent().setData(it))
         } ?: finish()

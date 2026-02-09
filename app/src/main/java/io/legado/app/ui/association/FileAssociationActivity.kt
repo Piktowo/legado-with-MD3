@@ -46,9 +46,13 @@ class FileAssociationActivity :
                 AppConfig.defaultBookTreeUri = treeUri.toString()
                 importBook(treeUri, uri)
             } ?: let {
-                val storageHelp = String(assets.open("storageHelp.md").readBytes())
-                toastOnUi(storageHelp)
-                importBook(null, uri)
+                lifecycleScope.launch {
+                    val storageHelp = withContext(IO) {
+                        String(assets.open("storageHelp.md").readBytes())
+                    }
+                    toastOnUi(storageHelp)
+                    importBook(null, uri)
+                }
             }
         }
     }
